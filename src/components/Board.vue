@@ -3,7 +3,7 @@
     <div class="column-container">
       <Column
         v-for="column in columns"
-        :columnData="column"
+        :column="column"
         :key="column.id"
         :isDisabledGlobal="isDisabledGlobal"
         @update-title="updateTitle"
@@ -14,6 +14,7 @@
         @clear-cards="clearCards"
         @update-card="updateCard"
         @delete-card="deleteCard"
+        @card-drop="handleCardDrop"
       />
     </div>
     <div class="board-actions">
@@ -126,7 +127,7 @@ function addColumn() {
 }
 
 function updateTitle(newTitle, columnId) {
-  const column = columns.find((col) => col.id === columnId);
+  const column = findColumnById(columnId);
   if (!column) return;
 
   column.title = newTitle;
@@ -150,12 +151,12 @@ function toggleEditingGlobal() {
 }
 
 function toggleColumnEditing(columnId) {
-  const column = columns.find((col) => col.id === columnId);
+  const column = findColumnById(columnId);
   if (column) column.editingDisabled = !column.editingDisabled;
 }
 
 function addCard(columnId) {
-  const column = columns.find((col) => col.id === columnId);
+  const column = findColumnById(columnId);
   if (!column) return;
 
   column.cards.push({
@@ -167,7 +168,7 @@ function addCard(columnId) {
 }
 
 function sortCards(columnId) {
-  const column = columns.find((col) => col.id === columnId);
+  const column = findColumnById(columnId);
   if (!column) return;
 
   column.sortBy = column.sortBy === "asc" ? "desc" : "asc";
@@ -179,12 +180,12 @@ function sortCards(columnId) {
 }
 
 function clearCards(columnId) {
-  const column = columns.find((col) => col.id === columnId);
+  const column = findColumnById(columnId);
   if (column) column.cards.splice(0, column.cards.length);
 }
 
 function updateCard(columnId, cardData) {
-  const column = columns.find((col) => col.id === columnId);
+  const column = findColumnById(columnId);
   if (!column) return;
 
   const card = column.cards.find((c) => c.id === cardData.id);
@@ -202,6 +203,29 @@ function deleteCard(columnId, cardId) {
   const index = column.cards.findIndex((c) => c.id === cardId);
   if (index !== -1) column.cards.splice(index, 1);
 }
+
+function handleCardDrop(event) {
+  const { cardId, fromColumnId, toColumnId } = event;
+
+
+  if (fromColumnId === toColumnId) return;
+
+  const fromColumn = findColumnById(fromColumnId);
+  const toColumn = findColumnById(toColumnId);
+
+  if (!fromColumn || !toColumn) return;
+
+  const cardIndex = fromColumn.cards.findIndex((card) => card.id === cardId);
+  if (cardIndex !== -1) {
+    const card = fromColumn.cards[cardIndex];
+    fromColumn.cards.splice(cardIndex, 1);
+    toColumn.cards.push(card);
+  }
+}
+
+function findColumnById(columnId) {
+  return columns.find((col) => col.id === columnId) || null;
+}
 </script>
 <style>
 .board {
@@ -217,7 +241,7 @@ function deleteCard(columnId, cardId) {
   flex-direction: row;
   width: 100%;
   overflow-x: auto;
-  padding: 16px;
+  padding: 16px 12px;
   height: 100vh;
 }
 .board-actions {

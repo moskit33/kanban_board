@@ -1,5 +1,5 @@
 <template>
-  <div class="column">
+  <div class="column" @dragover.prevent="dragOver" @drop.prevent="drop">
     <div class="filter" :class="{ 'disabled-filter': isDisabled }"></div>
     <div class="column-header">
       <h3
@@ -9,11 +9,9 @@
         :contenteditable="!isDisabled"
         ref="titleInput"
       >
-        {{ props.columnData.title }}
+        {{ props.column.title }}
       </h3>
-      <span class="column-header__count">{{
-        props.columnData.cards.length
-      }}</span>
+      <span class="column-header__count">{{ props.column.cards.length }}</span>
       <BaseButton
         class="column-header__button column-header__button--toggle-disable"
         :text="isDisabled ? 'Unlock Column' : 'Disable Editing'"
@@ -31,12 +29,14 @@
 
     <div class="cards-list">
       <Card
-        v-for="card in props.columnData.cards"
+        v-for="card in props.column.cards"
         :key="card.id"
         :card="card"
         :isDisabled="isDisabled"
-        @update-card="emit('update-card', props.columnData.id, $event)"
-        @delete-card="emit('delete-card', props.columnData.id, $event)"
+        :columnId="props.column.id"
+        @update-card="emit('update-card', props.column.id, $event)"
+        @delete-card="emit('delete-card', props.column.id, $event)"
+        @dragstart="dragStart"
       />
     </div>
     <BaseButton
@@ -49,19 +49,17 @@
     <div class="column-actions">
       <BaseButton
         :text="
-          props.columnData.sortBy === 'asc'
-            ? 'Sort Ascending'
-            : 'Sort Descending'
+          props.column.sortBy === 'asc' ? 'Sort Ascending' : 'Sort Descending'
         "
         icon="sort"
         :disabled="isDisabled"
-        @click="emit('sort-cards', props.columnData.id)"
+        @click="emit('sort-cards', props.column.id)"
       />
       <BaseButton
         text="Clear All"
         icon="clear"
         :disabled="isDisabled"
-        @click="emit('clear-cards', props.columnData.id)"
+        @click="emit('clear-cards', props.column.id)"
       />
     </div>
   </div>
@@ -73,7 +71,7 @@ import BaseButton from "./BaseButton.vue";
 import Card from "./Card.vue";
 
 const props = defineProps({
-  columnData: {
+  column: {
     type: Object,
     required: true,
   },
@@ -92,13 +90,14 @@ const emit = defineEmits([
   "clear-cards",
   "update-card",
   "delete-card",
+  "card-drop",
 ]);
 
 const titleInput = ref(null);
-const isDisabled = computed(() => props.columnData.editingDisabled);
+const isDisabled = computed(() => props.column.editingDisabled);
 
 onMounted(() => {
-  if (props.columnData.isNew && titleInput.value) {
+  if (props.column.isNew && titleInput.value) {
     titleInput.value.focus();
   }
 });
@@ -109,30 +108,56 @@ function updateColumnTitle() {
   const newTitle = titleInput.value.textContent.trim();
 
   if (newTitle) {
-    emit("update-title", newTitle, props.columnData.id);
+    emit("update-title", newTitle, props.column.id);
   } else {
-    titleInput.value.textContent = props.columnData.title || "New Column";
-    if (!props.columnData.title) {
-      emit("update-title", "New Column", props.columnData.id);
+    titleInput.value.textContent = props.column.title || "New Column";
+    if (!props.column.title) {
+      emit("update-title", "New Column", props.column.id);
     }
   }
   titleInput.value.blur();
 }
 
 function toggleEditingDisabled() {
-  emit("toggle-editing", props.columnData.id);
+  emit("toggle-editing", props.column.id);
 }
 
 function addCard() {
   if (isDisabled.value) return;
 
-  emit("add-card", props.columnData.id);
+  emit("add-card", props.column.id);
 }
 
 function deleteColumn() {
   if (isDisabled.value) return;
 
-  emit("delete-column", props.columnData.id);
+  emit("delete-column", props.column.id);
+}
+
+function dragStart(event) {
+  if (props.editingDisabled) {
+    event.preventDefault();
+    return;
+  }
+}
+
+function dragOver(event) {
+  if (props.editingDisabled) return;
+  event.dataTransfer.dropEffect = "move";
+}
+
+function drop(event) {
+  if (props.editingDisabled) return;
+
+  const cardId = parseInt(event.dataTransfer.getData("cardId"), 10);
+  const fromColumnId = parseInt(event.dataTransfer.getData("columnId"), 10);
+
+
+  emit("card-drop", {
+    cardId,
+    fromColumnId,
+    toColumnId: props.column.id,
+  });
 }
 </script>
 

@@ -1,5 +1,11 @@
 <template>
-  <div class="card" @contextmenu.prevent="onDelete" @blur="updateCard">
+  <div
+    class="card"
+    @contextmenu.prevent="onDelete"
+    @blur="updateCard"
+    @dragstart="dragStart"
+    draggable="true"
+  >
     <p
       class="card__title"
       :contenteditable="isEditing"
@@ -7,7 +13,7 @@
       @input="onInput"
       @dblclick="onEdit"
       ref="titleInput"
-      data-placeholder="Add title"
+      data-placeholder="Add Title"
     >
       {{ card.title }}
     </p>
@@ -18,7 +24,7 @@
       @input="onInput"
       @dblclick="onEdit"
       ref="descriptionInput"
-      data-placeholder="Add description"
+      data-placeholder="Add Description"
     >
       {{ card.description }}
     </p>
@@ -49,13 +55,17 @@ const props = defineProps({
     type: Object,
     default: () => ({}),
   },
+  columnId: {
+    type: Number,
+    required: true,
+  },
   isDisabled: {
     type: Boolean,
     default: false,
   },
 });
 
-const emit = defineEmits(["update-card", "delete-card"]);
+const emit = defineEmits(["update-card", "delete-card", "dragstart"]);
 
 const titleInput = ref(null);
 const descriptionInput = ref(null);
@@ -142,6 +152,31 @@ function hasContentChanged(currentContent) {
 function onDelete() {
   emit("delete-card", props.card.id);
 }
+
+function dragStart(event) {
+  if (props.editingDisabled) {
+    event.preventDefault();
+    return;
+  }
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("text/plain", "dragging");
+  event.dataTransfer.setData("cardId", String(props.card.id));
+  event.dataTransfer.setData("columnId", String(props.columnId));
+
+  addDraggingClass(event);
+
+  emit("dragstart", event);
+
+  event.target.addEventListener("dragend", removeDraggingClass, { once: true });
+}
+
+function addDraggingClass(event) {
+  event.target.classList.add("dragging");
+}
+
+function removeDraggingClass(event) {
+  event.target.classList.remove("dragging");
+}
 </script>
 
 <style>
@@ -154,7 +189,33 @@ function onDelete() {
   margin-bottom: 8px;
   text-align: left;
   font-size: 14px;
+  position: relative;
+  min-width: 200px;
 }
+.card::after {
+  content: "";
+  display: block;
+  width: 50px;
+  height: 50px;
+  position: absolute;
+  cursor: grab;
+  top: 0;
+  right: 0;
+  background: url("../assets/icons/drag&drop.svg") no-repeat center center;
+}
+.card.dragging {
+  opacity: 0.9;
+  box-shadow: 0 8px 24px 0 rgba(0, 123, 255, 0.25),
+    0 1.5px 6px 0 rgba(0, 0, 0, 0.08);
+  transform: scale(0.97);
+  transition: box-shadow 0.2s, opacity 0.2s, transform 0.2s;
+  z-index: 1000;
+  cursor: grabbing;
+}
+.card.dragging::after {
+  cursor: grabbing;
+}
+
 .card__title {
   font-weight: 600;
   color: rgba(0, 0, 0, 0.9);
