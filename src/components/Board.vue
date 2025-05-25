@@ -2,243 +2,28 @@
   <div class="board">
     <div class="column-container">
       <Column
-        v-for="column in columns"
-        :column="column"
+        v-for="column in kanbanBoard.columns"
         :key="column.id"
-        :isDisabledGlobal="isDisabledGlobal"
-        @update-title="updateTitle"
-        @delete-column="deleteColumn"
-        @toggle-editing="toggleColumnEditing"
-        @add-card="addCard"
-        @sort-cards="sortCards"
-        @clear-cards="clearCards"
-        @update-card="updateCard"
-        @delete-card="deleteCard"
-        @card-drop="handleCardDrop"
+        :column="column"
       />
     </div>
-    <div class="board-actions">
-      <BaseButton
-        class="board-actions__button"
-        text="New Column"
-        icon="create"
-        :disabled="isDisabledGlobal"
-        @click="addColumn"
-      />
-      <BaseButton
-        class="board-actions__button"
-        text="Shuffle Columns"
-        icon="shuffle"
-        @click="shuffleColumns"
-      />
-      <BaseButton
-        class="board-actions__button"
-        text="Shuffle Cards"
-        icon="shuffle"
-        @click="shuffleCards"
-      />
-      <BaseButton
-        class="board-actions__button"
-        :text="isDisabledGlobal ? 'Resume Editing' : 'Disable Editing'"
-        :icon="isDisabledGlobal ? 'resume' : 'disable'"
-        @click="toggleEditingGlobal"
-      />
-    </div>
-    <div class="board-actions__title-wrapper">
-      <h6 class="board-actions__title">Board Actions</h6>
-    </div>
+
+    <BoardActions />
   </div>
 </template>
 <script setup>
-import { ref, reactive, onMounted, watch } from "vue";
+import { provide, onMounted } from "vue";
 import Column from "./Column.vue";
-import BaseButton from "./BaseButton.vue";
+import BoardActions from "./BoardActions.vue";
+import { useKanbanBoard } from "../composables/useKanbanBoard.js";
 
-const STORAGE_KEY = "board-state";
-const initialColumns = ["TO DO", "In Progress", "Done"];
-const columns = reactive([]);
-const newColumnId = ref(1);
-const newCardId = ref(1);
-const isDisabledGlobal = ref(false);
+const kanbanBoard = useKanbanBoard();
 
-function saveToLocalStorage() {
-  const state = {
-    columns: columns,
-    nextColumnId: newColumnId.value,
-    nextCardId: newCardId.value,
-    isDisabledGlobal: isDisabledGlobal.value,
-  };
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-function loadFromLocalStorage() {
-  try {
-    const savedState = localStorage.getItem(STORAGE_KEY);
-
-    if (savedState) {
-      const state = JSON.parse(savedState);
-
-      state.columns.forEach((column) => columns.push(column));
-
-      newColumnId.value = state.nextColumnId || 1;
-      newCardId.value = state.nextCardId || 1;
-
-      isDisabledGlobal.value = state.isDisabledGlobal || false;
-
-      return true;
-    }
-  } catch (e) {
-    console.error("Error while reading localStorage", e);
-  }
-
-  return false;
-}
-
-function createDefaultColumns() {
-  initialColumns.forEach((title) => {
-    columns.push({
-      id: newColumnId.value++,
-      title: title,
-      cards: [],
-      isNew: false,
-      editingDisabled: false,
-      sortBy: "asc",
-    });
-  });
-}
+provide("kanbanBoard", kanbanBoard);
 
 onMounted(() => {
-  if (!loadFromLocalStorage()) {
-    createDefaultColumns();
-  }
-
-  watch(columns, () => saveToLocalStorage(), { deep: true });
+  kanbanBoard.initializeBoard();
 });
-
-function addColumn() {
-  columns.push({
-    id: newColumnId.value++,
-    title: "",
-    cards: [],
-    isNew: true,
-    sortBy: "asc",
-  });
-}
-
-function updateTitle(newTitle, columnId) {
-  const column = findColumnById(columnId);
-  if (!column) return;
-
-  column.title = newTitle;
-  column.isNew = false;
-}
-
-function deleteColumn(columnId) {
-  const index = columns.findIndex((col) => col.id === columnId);
-  if (index !== -1) columns.splice(index, 1);
-}
-
-function shuffleColumns() {
-  columns.sort(() => Math.random() - 0.5);
-}
-
-function shuffleCards() {
-  const allCards = [];
-  columns.forEach((col) => {
-    col.cards.forEach((card) => allCards.push({ ...card }));
-    col.cards.splice(0, col.cards.length);
-  });
-  while (allCards.length) {
-    const randomCardIdx = Math.floor(Math.random() * allCards.length);
-    const randomColIdx = Math.floor(Math.random() * columns.length);
-    columns[randomColIdx].cards.push(allCards[randomCardIdx]);
-    allCards.splice(randomCardIdx, 1);
-  }
-}
-
-function toggleEditingGlobal() {
-  isDisabledGlobal.value = !isDisabledGlobal.value;
-  columns.forEach((column) => {
-    column.editingDisabled = isDisabledGlobal.value;
-  });
-}
-
-function toggleColumnEditing(columnId) {
-  const column = findColumnById(columnId);
-  if (column) column.editingDisabled = !column.editingDisabled;
-}
-
-function addCard(columnId) {
-  const column = findColumnById(columnId);
-  if (!column) return;
-
-  column.cards.push({
-    id: newCardId.value++,
-    title: "",
-    description: "",
-    isNew: true,
-  });
-}
-
-function sortCards(columnId) {
-  const column = findColumnById(columnId);
-  if (!column) return;
-
-  column.sortBy = column.sortBy === "asc" ? "desc" : "asc";
-  column.cards.sort((a, b) =>
-    column.sortBy === "asc"
-      ? a.title.localeCompare(b.title)
-      : b.title.localeCompare(a.title)
-  );
-}
-
-function clearCards(columnId) {
-  const column = findColumnById(columnId);
-  if (column) column.cards.splice(0, column.cards.length);
-}
-
-function updateCard(columnId, cardData) {
-  const column = findColumnById(columnId);
-  if (!column) return;
-
-  const card = column.cards.find((c) => c.id === cardData.id);
-  if (!card) return;
-
-  card.title = cardData.title;
-  card.description = cardData.description;
-  card.isNew = false;
-}
-
-function deleteCard(columnId, cardId) {
-  const column = columns.find((col) => col.id === columnId);
-  if (!column) return;
-
-  const index = column.cards.findIndex((c) => c.id === cardId);
-  if (index !== -1) column.cards.splice(index, 1);
-}
-
-function handleCardDrop(event) {
-  const { cardId, fromColumnId, toColumnId } = event;
-
-  if (fromColumnId === toColumnId) return;
-
-  const fromColumn = findColumnById(fromColumnId);
-  const toColumn = findColumnById(toColumnId);
-
-  if (!fromColumn || !toColumn) return;
-
-  const cardIndex = fromColumn.cards.findIndex((card) => card.id === cardId);
-  if (cardIndex !== -1) {
-    const card = fromColumn.cards[cardIndex];
-    fromColumn.cards.splice(cardIndex, 1);
-    toColumn.cards.push(card);
-  }
-}
-
-function findColumnById(columnId) {
-  return columns.find((col) => col.id === columnId) || null;
-}
 </script>
 <style>
 .board {

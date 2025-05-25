@@ -48,8 +48,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from "vue";
+import { ref, onMounted, nextTick, computed, inject } from "vue";
 import BaseButton from "./BaseButton.vue";
+import { useDragAndDrop } from "../composables/useDragAndDrop.js";
 
 const props = defineProps({
   card: {
@@ -60,13 +61,11 @@ const props = defineProps({
     type: Number,
     required: true,
   },
-  isDisabled: {
-    type: Boolean,
-    default: false,
-  },
 });
 
-const emit = defineEmits(["update-card", "delete-card", "dragstart"]);
+const kanbanBoard = inject("kanbanBoard");
+
+const { startCardDrag } = useDragAndDrop();
 
 const titleInput = ref(null);
 const descriptionInput = ref(null);
@@ -74,6 +73,13 @@ const isEditing = ref(false);
 const originalTitle = ref("");
 const originalDescription = ref("");
 const hasChanges = ref(false);
+
+// Computed
+const isDisabled = computed(
+  () =>
+    kanbanBoard.isDisabledGlobal.value ||
+    kanbanBoard.findColumnById(props.columnId)?.editingDisabled
+);
 
 onMounted(() => {
   if (props.card.isNew && titleInput.value) {
@@ -88,7 +94,7 @@ onMounted(() => {
 });
 
 function updateCard() {
-  if (!hasChanges) return;
+  if (!hasChanges.value) return;
 
   const updatedCard = {
     id: props.card.id,
@@ -96,14 +102,14 @@ function updateCard() {
     description: descriptionInput.value?.textContent?.trim() || "",
   };
 
-  emit("update-card", updatedCard);
+  kanbanBoard.updateCard(props.columnId, updatedCard);
 
   isEditing.value = false;
   hasChanges.value = false;
 }
 
 function onEdit(event) {
-  if (props.isDisabled || isEditing.value) return;
+  if (isDisabled.value || isEditing.value) return;
 
   isEditing.value = true;
   originalTitle.value = props.card.title;
@@ -119,7 +125,7 @@ function onEdit(event) {
 
 function cancelEditing() {
   if (props.card.isNew) {
-    return emit("delete-card", props.card.id);
+    return kanbanBoard.deleteCard(props.columnId, props.card.id);
   }
 
   restoreOriginalData();
@@ -151,52 +157,11 @@ function hasContentChanged(currentContent) {
 }
 
 function onDelete() {
-  emit("delete-card", props.card.id);
+  kanbanBoard.deleteCard(props.columnId, props.card.id);
 }
 
 function dragStart(event) {
-  if (props.editingDisabled) {
-    event.preventDefault();
-    return;
-  }
-
-  // Set the drag data
-  event.dataTransfer.effectAllowed = "move";
-  event.dataTransfer.setData("text/plain", "dragging");
-  event.dataTransfer.setData("cardId", String(props.card.id));
-  event.dataTransfer.setData("columnId", String(props.columnId));
-
-  // Create a custom drag image
-  const dragImage = createDragImage(event.target);
-  event.dataTransfer.setDragImage(
-    dragImage,
-    dragImage.offsetWidth / 2,
-    dragImage.offsetHeight / 2
-  );
-  setTimeout(() => document.body.removeChild(dragImage), 0);
-
-  addDraggingClass(event);
-  emit("dragstart", event);
-  event.target.addEventListener("dragend", removeDraggingClass, { once: true });
-}
-
-function createDragImage(sourceNode) {
-  const node = sourceNode.cloneNode(true);
-  node.style.position = "absolute";
-  node.style.top = "-9999px";
-  node.style.left = "-9999px";
-  node.style.width = "300px";
-  node.style.minHeight = "80px";
-  node.style.opacity = "1";
-  node.style.pointerEvents = "none";
-  node.style.boxShadow =
-    "0 16px 48px 0 rgba(0,123,255,0.55), 0 2px 8px 0 rgba(0,0,0,0.18)";
-  node.style.border = "3px solid #007bff";
-  node.style.background = "#eaf4ff";
-  node.style.transform = "scale(1.07)";
-  node.style.zIndex = "9999";
-  document.body.appendChild(node);
-  return node;
+  startCardDrag(event, props.card.id, props.columnId);
 }
 
 function addDraggingClass(event) {

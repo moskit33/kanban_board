@@ -9,9 +9,9 @@
         :contenteditable="!isDisabled"
         ref="titleInput"
       >
-        {{ props.column.title }}
+        {{ column.title }}
       </h3>
-      <span class="column-header__count">{{ props.column.cards.length }}</span>
+      <span class="column-header__count">{{ column.cards.length }}</span>
       <BaseButton
         class="column-header__button column-header__button--toggle-disable"
         :text="isDisabled ? 'Unlock Column' : 'Disable Editing'"
@@ -26,17 +26,12 @@
         @click="deleteColumn"
       />
     </div>
-
     <div class="cards-list">
       <Card
-        v-for="card in props.column.cards"
+        v-for="card in column.cards"
         :key="card.id"
         :card="card"
-        :isDisabled="isDisabled"
-        :columnId="props.column.id"
-        @update-card="emit('update-card', props.column.id, $event)"
-        @delete-card="emit('delete-card', props.column.id, $event)"
-        @dragstart="dragStart"
+        :columnId="column.id"
       />
     </div>
     <BaseButton
@@ -48,56 +43,45 @@
     />
     <div class="column-actions">
       <BaseButton
-        :text="
-          props.column.sortBy === 'asc' ? 'Sort Ascending' : 'Sort Descending'
-        "
+        :text="column.sortBy === 'asc' ? 'Sort Ascending' : 'Sort Descending'"
         icon="sort"
         :disabled="isDisabled"
-        @click="emit('sort-cards', props.column.id)"
+        @click="kanbanBoard.sortCards(column.id)"
       />
       <BaseButton
         text="Clear All"
         icon="clear"
         :disabled="isDisabled"
-        @click="emit('clear-cards', props.column.id)"
+        @click="kanbanBoard.clearCards(column.id)"
       />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, inject } from "vue";
 import BaseButton from "./BaseButton.vue";
 import Card from "./Card.vue";
+import { useDragAndDrop } from "../composables/useDragAndDrop.js";
 
 const props = defineProps({
   column: {
     type: Object,
     required: true,
   },
-  isDisabledGlobal: {
-    type: Boolean,
-    default: false,
-  },
 });
 
-const emit = defineEmits([
-  "update-title",
-  "delete-column",
-  "toggle-editing",
-  "add-card",
-  "sort-cards",
-  "clear-cards",
-  "update-card",
-  "delete-card",
-  "card-drop",
-]);
+const kanbanBoard = inject("kanbanBoard");
+
+const { handleDragOver, handleDrop } = useDragAndDrop();
 
 const titleInput = ref(null);
 const isDisabled = computed(() => props.column.editingDisabled);
 
+const column = props.column;
+
 onMounted(() => {
-  if (props.column.isNew && titleInput.value) {
+  if (column.isNew && titleInput.value) {
     titleInput.value.focus();
   }
 });
@@ -108,56 +92,44 @@ function updateColumnTitle() {
   const newTitle = titleInput.value.textContent.trim();
 
   if (newTitle) {
-    emit("update-title", newTitle, props.column.id);
+    kanbanBoard.updateColumnTitle(newTitle, column.id);
   } else {
-    titleInput.value.textContent = props.column.title || "New Column";
-    if (!props.column.title) {
-      emit("update-title", "New Column", props.column.id);
+    titleInput.value.textContent = column.title || "New Column";
+    if (!column.title) {
+      kanbanBoard.updateColumnTitle("New Column", column.id);
     }
   }
   titleInput.value.blur();
 }
 
 function toggleEditingDisabled() {
-  emit("toggle-editing", props.column.id);
+  kanbanBoard.toggleColumnEditing(column.id);
 }
 
 function addCard() {
   if (isDisabled.value) return;
-
-  emit("add-card", props.column.id);
+  kanbanBoard.addCard(column.id);
 }
 
 function deleteColumn() {
   if (isDisabled.value) return;
-
-  emit("delete-column", props.column.id);
-}
-
-function dragStart(event) {
-  if (props.editingDisabled) {
-    event.preventDefault();
-    return;
-  }
+  kanbanBoard.deleteColumn(column.id);
 }
 
 function dragOver(event) {
-  if (props.editingDisabled) return;
-  event.dataTransfer.dropEffect = "move";
+  handleDragOver(event, isDisabled.value);
 }
 
 function drop(event) {
-  if (props.editingDisabled) return;
+  if (isDisabled.value) return;
 
-  const cardId = parseInt(event.dataTransfer.getData("cardId"), 10);
-  const fromColumnId = parseInt(event.dataTransfer.getData("columnId"), 10);
-
-
-  emit("card-drop", {
-    cardId,
-    fromColumnId,
-    toColumnId: props.column.id,
-  });
+  const dropData = handleDrop(event);
+  if (dropData) {
+    kanbanBoard.handleCardDrop({
+      ...dropData,
+      toColumnId: column.id,
+    });
+  }
 }
 </script>
 
