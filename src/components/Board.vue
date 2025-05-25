@@ -35,7 +35,7 @@
         class="board-actions__button"
         text="Shuffle Cards"
         icon="shuffle"
-        @click=""
+        @click="shuffleCards"
       />
       <BaseButton
         class="board-actions__button"
@@ -143,6 +143,20 @@ function shuffleColumns() {
   columns.sort(() => Math.random() - 0.5);
 }
 
+function shuffleCards() {
+  const allCards = [];
+  columns.forEach((col) => {
+    col.cards.forEach((card) => allCards.push({ ...card }));
+    col.cards.splice(0, col.cards.length);
+  });
+  while (allCards.length) {
+    const randomCardIdx = Math.floor(Math.random() * allCards.length);
+    const randomColIdx = Math.floor(Math.random() * columns.length);
+    columns[randomColIdx].cards.push(allCards[randomCardIdx]);
+    allCards.splice(randomCardIdx, 1);
+  }
+}
+
 function toggleEditingGlobal() {
   isDisabledGlobal.value = !isDisabledGlobal.value;
   columns.forEach((column) => {
@@ -206,7 +220,6 @@ function deleteCard(columnId, cardId) {
 
 function handleCardDrop(event) {
   const { cardId, fromColumnId, toColumnId } = event;
-
 
   if (fromColumnId === toColumnId) return;
 
