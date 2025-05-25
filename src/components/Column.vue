@@ -201,7 +201,7 @@ function drop(event) {
 .new-card-button {
   width: 100%;
   border-radius: 8px;
-  border-width: 0;
+  outline-color: #ced9e3;
   background-color: #ced9e3;
   padding: 8px;
   margin: 8px 0;

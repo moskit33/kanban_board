@@ -243,7 +243,7 @@ function removeDraggingClass(event) {
   justify-content: flex-start;
   margin-top: 8px;
 }
-.card__button {
-  margin-right: 4px;
+.card__button:first-child {
+  margin-left: 0;
 }
 </style>

@@ -69,12 +69,19 @@ const handleClick = (event) => props.callback?.(event);
   transition: all 0.2s ease;
   background-color: #fff;
   color: #000;
-  border: 2px solid rgba(0, 0, 0, 0.05);
-  outline: none;
+  border: none;
+  outline: 2px solid rgba(0, 0, 0, 0.05);
+  margin-left: 10px;
+}
+.base-button:focus-visible {
+  outline: 2px solid #007bff;
+  outline-offset: 1px;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+  z-index: 2;
 }
 
 .base-button:hover {
-  border-color: blue;
+  outline-color: #007bff;
 }
 
 .base-button:disabled,
@@ -83,7 +90,7 @@ const handleClick = (event) => props.callback?.(event);
 .base-button:disabled:active {
   opacity: 0.6;
   cursor: not-allowed;
-  border-color: rgba(0, 0, 0, 0.05);
+  outline-color: rgba(0, 0, 0, 0.05);
 }
 
 .button-icon {
