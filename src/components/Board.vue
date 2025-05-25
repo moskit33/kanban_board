@@ -9,6 +9,11 @@
         @update-title="updateTitle"
         @delete-column="deleteColumn"
         @toggle-editing="toggleColumnEditing"
+        @add-card="addCard"
+        @sort-cards="sortCards"
+        @clear-cards="clearCards"
+        @update-card="updateCard"
+        @delete-card="deleteCard"
       />
     </div>
     <div class="board-actions">
@@ -50,7 +55,9 @@ import BaseButton from "./BaseButton.vue";
 const initialColumns = ["TO DO", "In Progress", "Done"];
 const columns = reactive([]);
 const newColumnId = ref(1);
+const newCardId = ref(1);
 const isDisabledGlobal = ref(false);
+
 onMounted(() => {
   initialColumns.forEach((title, index) => {
     columns.push({
@@ -59,26 +66,27 @@ onMounted(() => {
       cards: [],
       isNew: false,
       isEditingDisabled: false,
+      sortBy: "asc",
     });
   });
 });
 
 function addColumn() {
   columns.push({
-    id: newColumnId.value,
-    title: `New Column`,
+    id: newColumnId.value++,
+    title: "",
     cards: [],
     isNew: true,
+    sortBy: "asc",
   });
-  newColumnId.value++;
 }
 
 function updateTitle(newTitle, columnId) {
   const column = columns.find((col) => col.id === columnId);
-  if (column) {
-    column.title = newTitle;
-    column.isNew = false;
-  }
+  if (!column) return;
+
+  column.title = newTitle;
+  column.isNew = false;
 }
 
 function deleteColumn(columnId) {
@@ -100,6 +108,55 @@ function toggleEditingGlobal() {
 function toggleColumnEditing(columnId) {
   const column = columns.find((col) => col.id === columnId);
   if (column) column.isEditingDisabled = !column.isEditingDisabled;
+}
+
+function addCard(columnId) {
+  const column = columns.find((col) => col.id === columnId);
+  if (!column) return;
+
+  column.cards.push({
+    id: newCardId.value++,
+    title: "",
+    description: "",
+    isNew: true,
+  });
+}
+
+function sortCards(columnId) {
+  const column = columns.find((col) => col.id === columnId);
+  if (!column) return;
+
+  column.sortBy = column.sortBy === "asc" ? "desc" : "asc";
+  column.cards.sort((a, b) =>
+    column.sortBy === "asc"
+      ? a.title.localeCompare(b.title)
+      : b.title.localeCompare(a.title)
+  );
+}
+
+function clearCards(columnId) {
+  const column = columns.find((col) => col.id === columnId);
+  if (column) column.cards.splice(0, column.cards.length);
+}
+
+function updateCard(columnId, cardData) {
+  const column = columns.find((col) => col.id === columnId);
+  if (!column) return;
+
+  const card = column.cards.find((c) => c.id === cardData.id);
+  if (!card) return;
+
+  card.title = cardData.title;
+  card.description = cardData.description;
+  card.isNew = false;
+}
+
+function deleteCard(columnId, cardId) {
+  const column = columns.find((col) => col.id === columnId);
+  if (!column) return;
+
+  const index = column.cards.findIndex((c) => c.id === cardId);
+  if (index !== -1) column.cards.splice(index, 1);
 }
 </script>
 <style>

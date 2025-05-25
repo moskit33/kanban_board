@@ -33,14 +33,36 @@
       <Card
         v-for="card in props.columnData.cards"
         :key="card.id"
-        :title="card.title"
-        :description="card.description"
+        :card="card"
+        :isDisabled="isDisabled"
+        @update-card="emit('update-card', props.columnData.id, $event)"
+        @delete-card="emit('delete-card', props.columnData.id, $event)"
       />
     </div>
-    <BaseButton class="new-card-button" text="New Card" icon="create" />
+    <BaseButton
+      class="new-card-button"
+      text="New Card"
+      icon="create"
+      :disabled="isDisabled"
+      @click="addCard"
+    />
     <div class="column-actions">
-      <BaseButton text="Sort" icon="sort" />
-      <BaseButton text="Clear All" icon="clear" />
+      <BaseButton
+        :text="
+          props.columnData.sortBy === 'asc'
+            ? 'Sort Ascending'
+            : 'Sort Descending'
+        "
+        icon="sort"
+        :disabled="isDisabled"
+        @click="emit('sort-cards', props.columnData.id)"
+      />
+      <BaseButton
+        text="Clear All"
+        icon="clear"
+        :disabled="isDisabled"
+        @click="emit('clear-cards', props.columnData.id)"
+      />
     </div>
   </div>
 </template>
@@ -60,7 +82,16 @@ const props = defineProps({
     default: false,
   },
 });
-const emit = defineEmits(["update-title", "delete-column", "toggle-editing"]);
+const emit = defineEmits([
+  "update-title",
+  "delete-column",
+  "toggle-editing",
+  "add-card",
+  "sort-cards",
+  "clear-cards",
+  "update-card",
+  "delete-card",
+]);
 
 const titleInput = ref(null);
 const isDisabled = computed(() => props.columnData.isEditingDisabled);
@@ -89,6 +120,12 @@ function updateColumnTitle() {
 }
 function toogleEditingDisabled() {
   emit("toggle-editing", props.columnData.id);
+}
+
+function addCard() {
+  if (isDisabled.value) return;
+
+  emit("add-card", props.columnData.id);
 }
 </script>
 
@@ -127,7 +164,7 @@ function toogleEditingDisabled() {
 .column-header__title {
   font-size: 13px;
   font-weight: 600;
-  color: rgba(0, 0, 0, 0.3);
+  color: rgba(0, 0, 0, 0.6);
   margin: 0 auto 0 0;
   width: 140px;
   text-align: left;
