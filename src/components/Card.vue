@@ -1,16 +1,13 @@
 <template>
-  <div
-    class="card"
-    @dblclick="startEditing"
-    @contextmenu.prevent="onDelete"
-    @blur="updateCard"
-  >
+  <div class="card" @contextmenu.prevent="onDelete" @blur="updateCard">
     <p
       class="card__title"
       :contenteditable="isEditing"
       @keydown.enter.prevent="updateCard"
       @input="onInput"
+      @dblclick="onEdit"
       ref="titleInput"
+      data-placeholder="Add title"
     >
       {{ card.title }}
     </p>
@@ -19,7 +16,9 @@
       :contenteditable="isEditing"
       @keydown.enter.prevent="updateCard"
       @input="onInput"
+      @dblclick="onEdit"
       ref="descriptionInput"
+      data-placeholder="Add description"
     >
       {{ card.description }}
     </p>
@@ -92,15 +91,18 @@ function updateCard() {
   hasChanges.value = false;
 }
 
-function startEditing() {
-  if (props.isDisabled) return;
+function onEdit(event) {
+  if (props.isDisabled || isEditing.value) return;
 
   isEditing.value = true;
   originalTitle.value = props.card.title;
   originalDescription.value = props.card.description;
 
   nextTick(() => {
-    titleInput.value.focus();
+    if (props.card.isNew) titleInput.value.focus();
+    else {
+      event?.target?.focus();
+    }
   });
 }
 
@@ -169,6 +171,13 @@ function onDelete() {
 .card__title:focus,
 .card__description:focus {
   outline: 2px solid #007bff;
+}
+
+.card__title:empty:not(:focus):before,
+.card__description:empty:not(:focus):before {
+  content: attr(data-placeholder);
+  pointer-events: none;
+  font-weight: 600;
 }
 
 .card__actions {

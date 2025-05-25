@@ -15,10 +15,10 @@
         props.columnData.cards.length
       }}</span>
       <BaseButton
-        class="column-header__button column-header__button--disable"
+        class="column-header__button column-header__button--toggle-disable"
         :text="isDisabled ? 'Unlock Column' : 'Disable Editing'"
         :icon="isDisabled ? 'resume' : 'disable'"
-        @click="toogleEditingDisabled"
+        @click="toggleEditingDisabled"
       />
       <BaseButton
         class="column-header__button"
@@ -82,6 +82,7 @@ const props = defineProps({
     default: false,
   },
 });
+
 const emit = defineEmits([
   "update-title",
   "delete-column",
@@ -94,11 +95,9 @@ const emit = defineEmits([
 ]);
 
 const titleInput = ref(null);
-const isDisabled = computed(() => props.columnData.isEditingDisabled);
+const isDisabled = computed(() => props.columnData.editingDisabled);
 
 onMounted(() => {
-  console.log("Column mounted with columnData:", props.columnData);
-
   if (props.columnData.isNew && titleInput.value) {
     titleInput.value.focus();
   }
@@ -107,19 +106,20 @@ onMounted(() => {
 function updateColumnTitle() {
   if (!titleInput.value) return;
 
-  if (!props.columnData.title && !titleInput.value.textContent.trim()) {
-    return deleteColumn();
-  }
-
   const newTitle = titleInput.value.textContent.trim();
+
   if (newTitle) {
     emit("update-title", newTitle, props.columnData.id);
-    titleInput.value.blur();
   } else {
-    titleInput.value.textContent = props.columnData.title;
+    titleInput.value.textContent = props.columnData.title || "New Column";
+    if (!props.columnData.title) {
+      emit("update-title", "New Column", props.columnData.id);
+    }
   }
+  titleInput.value.blur();
 }
-function toogleEditingDisabled() {
+
+function toggleEditingDisabled() {
   emit("toggle-editing", props.columnData.id);
 }
 
@@ -171,9 +171,10 @@ function deleteColumn() {
 .column-header__title {
   font-size: 13px;
   font-weight: 600;
-  color: rgba(0, 0, 0, 0.6);
-  margin: 0 auto 0 0;
-  width: 140px;
+  color: rgba(0, 0, 0, 0.4);
+  margin: 0;
+  min-width: 40px;
+  max-width: 140px;
   text-align: left;
 }
 .column-header__title:focus {
@@ -184,6 +185,7 @@ function deleteColumn() {
   font-weight: 600;
   color: rgba(0, 0, 0, 0.6);
   margin-left: 8px;
+  margin-right: auto;
 }
 .cards-list {
   display: flex;
@@ -195,7 +197,7 @@ function deleteColumn() {
   margin-bottom: 0 !important;
 }
 
-.column-header__button--disable {
+.column-header__button--toggle-disable {
   z-index: 10;
 }
 

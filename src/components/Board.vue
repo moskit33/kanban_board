@@ -21,6 +21,7 @@
         class="board-actions__button"
         text="New Column"
         icon="create"
+        :disabled="isDisabledGlobal"
         @click="addColumn"
       />
       <BaseButton
@@ -65,7 +66,7 @@ onMounted(() => {
       title: title,
       cards: [],
       isNew: false,
-      isEditingDisabled: false,
+      editingDisabled: false,
       sortBy: "asc",
     });
   });
@@ -101,13 +102,13 @@ function shuffleColumns() {
 function toggleEditingGlobal() {
   isDisabledGlobal.value = !isDisabledGlobal.value;
   columns.forEach((column) => {
-    column.isEditingDisabled = isDisabledGlobal.value;
+    column.editingDisabled = isDisabledGlobal.value;
   });
 }
 
 function toggleColumnEditing(columnId) {
   const column = columns.find((col) => col.id === columnId);
-  if (column) column.isEditingDisabled = !column.isEditingDisabled;
+  if (column) column.editingDisabled = !column.editingDisabled;
 }
 
 function addCard(columnId) {
