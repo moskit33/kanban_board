@@ -49,18 +49,53 @@
   </div>
 </template>
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, watch } from "vue";
 import Column from "./Column.vue";
 import BaseButton from "./BaseButton.vue";
 
+const STORAGE_KEY = "board-state";
 const initialColumns = ["TO DO", "In Progress", "Done"];
 const columns = reactive([]);
 const newColumnId = ref(1);
 const newCardId = ref(1);
 const isDisabledGlobal = ref(false);
 
-onMounted(() => {
-  initialColumns.forEach((title, index) => {
+function saveToLocalStorage() {
+  const state = {
+    columns: columns,
+    nextColumnId: newColumnId.value,
+    nextCardId: newCardId.value,
+    isDisabledGlobal: isDisabledGlobal.value,
+  };
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadFromLocalStorage() {
+  try {
+    const savedState = localStorage.getItem(STORAGE_KEY);
+
+    if (savedState) {
+      const state = JSON.parse(savedState);
+
+      state.columns.forEach((column) => columns.push(column));
+
+      newColumnId.value = state.nextColumnId || 1;
+      newCardId.value = state.nextCardId || 1;
+
+      isDisabledGlobal.value = state.isDisabledGlobal || false;
+
+      return true;
+    }
+  } catch (e) {
+    console.error("Error while reading localStorage", e);
+  }
+
+  return false;
+}
+
+function createDefaultColumns() {
+  initialColumns.forEach((title) => {
     columns.push({
       id: newColumnId.value++,
       title: title,
@@ -70,6 +105,14 @@ onMounted(() => {
       sortBy: "asc",
     });
   });
+}
+
+onMounted(() => {
+  if (!loadFromLocalStorage()) {
+    createDefaultColumns();
+  }
+
+  watch(columns, () => saveToLocalStorage(), { deep: true });
 });
 
 function addColumn() {
