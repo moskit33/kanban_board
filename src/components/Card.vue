@@ -1,6 +1,7 @@
 <template>
   <div
     class="card"
+    :class="{ 'card--disable': isDisabled }"
     @contextmenu.prevent="onDelete"
     @blur="updateCard"
     @dragstart="dragStart"
@@ -219,6 +220,9 @@ function removeDraggingClass(event) {
   font-size: 14px;
   position: relative;
   min-width: 200px;
+}
+.card--disable {
+  pointer-events: none;
 }
 .card::after {
   content: "";
