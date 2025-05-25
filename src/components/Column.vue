@@ -25,7 +25,7 @@
         text="Delete Column"
         icon="cancel"
         :disabled="isDisabled"
-        @click="emit('delete-column', props.columnData.id)"
+        @click="deleteColumn"
       />
     </div>
 
@@ -101,21 +101,22 @@ onMounted(() => {
 
   if (props.columnData.isNew && titleInput.value) {
     titleInput.value.focus();
-    titleInput.value.textContent = "";
   }
 });
 
 function updateColumnTitle() {
   if (!titleInput.value) return;
 
+  if (!props.columnData.title && !titleInput.value.textContent.trim()) {
+    return deleteColumn();
+  }
+
   const newTitle = titleInput.value.textContent.trim();
   if (newTitle) {
-    console.log("Updating column title to:", props);
-
     emit("update-title", newTitle, props.columnData.id);
     titleInput.value.blur();
   } else {
-    titleInput.value.textContent = props.columnData.title; // Reset to original title
+    titleInput.value.textContent = props.columnData.title;
   }
 }
 function toogleEditingDisabled() {
@@ -126,6 +127,12 @@ function addCard() {
   if (isDisabled.value) return;
 
   emit("add-card", props.columnData.id);
+}
+
+function deleteColumn() {
+  if (isDisabled.value) return;
+
+  emit("delete-column", props.columnData.id);
 }
 </script>
 
