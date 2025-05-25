@@ -77,9 +77,13 @@ const handleClick = (event) => props.callback?.(event);
   border-color: blue;
 }
 
-.base-button:disabled {
+.base-button:disabled,
+.base-button:disabled:hover,
+.base-button:disabled:focus,
+.base-button:disabled:active {
   opacity: 0.6;
   cursor: not-allowed;
+  border-color: rgba(0, 0, 0, 0.05);
 }
 
 .button-icon {

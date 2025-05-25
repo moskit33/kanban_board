@@ -1,24 +1,37 @@
 <template>
   <div class="column">
+    <div class="filter" :class="{ 'disabled-filter': isDisabled }"></div>
     <div class="column-header">
-      <h3 class="column-header__title">
-        {{ title }} <span class="column-header__count">{{ cards.length }}</span>
+      <h3
+        class="column-header__title"
+        @keydown.enter.prevent="updateColumnTitle"
+        @blur="updateColumnTitle"
+        :contenteditable="!isDisabled"
+        ref="titleInput"
+      >
+        {{ props.columnData.title }}
       </h3>
+      <span class="column-header__count">{{
+        props.columnData.cards.length
+      }}</span>
       <BaseButton
-        class="column-header__button"
-        text="Disable Editing"
-        icon="disable"
+        class="column-header__button column-header__button--disable"
+        :text="isDisabled ? 'Unlock Column' : 'Disable Editing'"
+        :icon="isDisabled ? 'resume' : 'disable'"
+        @click="toogleEditingDisabled"
       />
       <BaseButton
         class="column-header__button"
         text="Delete Column"
         icon="cancel"
+        :disabled="isDisabled"
+        @click="emit('delete-column', props.columnData.id)"
       />
     </div>
 
     <div class="cards-list">
       <Card
-        v-for="card in cards"
+        v-for="card in props.columnData.cards"
         :key="card.id"
         :title="card.title"
         :description="card.description"
@@ -33,20 +46,50 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, computed } from "vue";
 import BaseButton from "./BaseButton.vue";
 import Card from "./Card.vue";
 
 const props = defineProps({
-  title: {
-    type: String,
+  columnData: {
+    type: Object,
     required: true,
   },
-  cards: {
-    type: Array,
-    default: () => [],
+  isDisabledGlobal: {
+    type: Boolean,
+    default: false,
   },
 });
+const emit = defineEmits(["update-title", "delete-column", "toggle-editing"]);
+
+const titleInput = ref(null);
+const isDisabled = computed(() => props.columnData.isEditingDisabled);
+
+onMounted(() => {
+  console.log("Column mounted with columnData:", props.columnData);
+
+  if (props.columnData.isNew && titleInput.value) {
+    titleInput.value.focus();
+    titleInput.value.textContent = "";
+  }
+});
+
+function updateColumnTitle() {
+  if (!titleInput.value) return;
+
+  const newTitle = titleInput.value.textContent.trim();
+  if (newTitle) {
+    console.log("Updating column title to:", props);
+
+    emit("update-title", newTitle, props.columnData.id);
+    titleInput.value.blur();
+  } else {
+    titleInput.value.textContent = props.columnData.title; // Reset to original title
+  }
+}
+function toogleEditingDisabled() {
+  emit("toggle-editing", props.columnData.id);
+}
 </script>
 
 <style>
@@ -59,7 +102,22 @@ const props = defineProps({
   padding: 16px;
   margin: 0 12px;
   height: 100%;
+  position: relative;
 }
+.disabled-filter {
+  opacity: 0.5;
+  pointer-events: none;
+  filter: grayscale(0.5);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: inherit;
+}
+
 .column-header {
   display: flex;
   justify-content: flex-end;
@@ -71,6 +129,11 @@ const props = defineProps({
   font-weight: 600;
   color: rgba(0, 0, 0, 0.3);
   margin: 0 auto 0 0;
+  width: 140px;
+  text-align: left;
+}
+.column-header__title:focus {
+  outline: 2px solid #007bff;
 }
 .column-header__count {
   font-size: 13px;
@@ -86,6 +149,10 @@ const props = defineProps({
 
 .cards-list > *:last-child {
   margin-bottom: 0 !important;
+}
+
+.column-header__button--disable {
+  z-index: 10;
 }
 
 .new-card-button {

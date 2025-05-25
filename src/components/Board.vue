@@ -3,9 +3,12 @@
     <div class="column-container">
       <Column
         v-for="column in columns"
+        :columnData="column"
         :key="column.id"
-        :title="column.title"
-        :cards="column.cards"
+        :isDisabledGlobal="isDisabledGlobal"
+        @update-title="updateTitle"
+        @delete-column="deleteColumn"
+        @toggle-editing="toggleColumnEditing"
       />
     </div>
     <div class="board-actions">
@@ -13,13 +16,13 @@
         class="board-actions__button"
         text="New Column"
         icon="create"
-        @click=""
+        @click="addColumn"
       />
       <BaseButton
         class="board-actions__button"
         text="Shuffle Columns"
         icon="shuffle"
-        @click=""
+        @click="shuffleColumns"
       />
       <BaseButton
         class="board-actions__button"
@@ -29,9 +32,9 @@
       />
       <BaseButton
         class="board-actions__button"
-        text="Disable Editing"
-        icon="disable"
-        @click=""
+        :text="isDisabledGlobal ? 'Resume Editing' : 'Disable Editing'"
+        :icon="isDisabledGlobal ? 'resume' : 'disable'"
+        @click="toggleEditingGlobal"
       />
     </div>
     <div class="board-actions__title-wrapper">
@@ -40,19 +43,64 @@
   </div>
 </template>
 <script setup>
-import { ref } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import Column from "./Column.vue";
 import BaseButton from "./BaseButton.vue";
 
-const columns = ref([
-  {
-    id: 1,
-    title: "TO DO",
-    cards: [{ id: 1, title: "Task 1", description: "Add description" }],
-  },
-  { id: 2, title: "In Progress", cards: [] },
-  { id: 3, title: "Done", cards: [] },
-]);
+const initialColumns = ["TO DO", "In Progress", "Done"];
+const columns = reactive([]);
+const newColumnId = ref(1);
+const isDisabledGlobal = ref(false);
+onMounted(() => {
+  initialColumns.forEach((title, index) => {
+    columns.push({
+      id: newColumnId.value++,
+      title: title,
+      cards: [],
+      isNew: false,
+      isEditingDisabled: false,
+    });
+  });
+});
+
+function addColumn() {
+  columns.push({
+    id: newColumnId.value,
+    title: `New Column`,
+    cards: [],
+    isNew: true,
+  });
+  newColumnId.value++;
+}
+
+function updateTitle(newTitle, columnId) {
+  const column = columns.find((col) => col.id === columnId);
+  if (column) {
+    column.title = newTitle;
+    column.isNew = false;
+  }
+}
+
+function deleteColumn(columnId) {
+  const index = columns.findIndex((col) => col.id === columnId);
+  if (index !== -1) columns.splice(index, 1);
+}
+
+function shuffleColumns() {
+  columns.sort(() => Math.random() - 0.5);
+}
+
+function toggleEditingGlobal() {
+  isDisabledGlobal.value = !isDisabledGlobal.value;
+  columns.forEach((column) => {
+    column.isEditingDisabled = isDisabledGlobal.value;
+  });
+}
+
+function toggleColumnEditing(columnId) {
+  const column = columns.find((col) => col.id === columnId);
+  if (column) column.isEditingDisabled = !column.isEditingDisabled;
+}
 </script>
 <style>
 .board {
