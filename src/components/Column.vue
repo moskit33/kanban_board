@@ -137,7 +137,7 @@ function drop(event) {
 .column {
   display: flex;
   flex-direction: column;
-  width: 448px;
+  min-width: 448px;
   background-color: #eceff2;
   border-radius: 12px;
   padding: 16px;
