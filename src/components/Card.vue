@@ -213,17 +213,25 @@ function removeDraggingClass(event) {
   cursor: grabbing;
 }
 
-.card__title {
+.card__title,
+.card__description {
   font-weight: 600;
+  min-height: 20px;
+  max-height: 40px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  white-space: normal;
+}
+.card__title {
   color: rgba(0, 0, 0, 0.9);
   margin: 0 0 4px;
-  min-height: 20px;
 }
 .card__description {
   color: rgba(0, 0, 0, 0.3);
   margin: 0;
-  min-height: 20px;
-  font-weight: 600;
 }
 
 .card__title:focus,

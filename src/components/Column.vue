@@ -137,7 +137,7 @@ function drop(event) {
 .column {
   display: flex;
   flex-direction: column;
-  min-width: 448px;
+  width: 448px;
   background-color: #eceff2;
   border-radius: 12px;
   padding: 16px;
@@ -171,8 +171,16 @@ function drop(event) {
   color: rgba(0, 0, 0, 0.4);
   margin: 0;
   min-width: 40px;
-  max-width: 140px;
+  max-width: 125px;
   text-align: left;
+  min-height: 20px;
+  max-height: 60px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  white-space: normal;
 }
 .column-header__title:focus {
   outline: 2px solid #007bff;
