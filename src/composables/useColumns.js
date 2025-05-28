@@ -1,6 +1,6 @@
 import { ref, reactive, computed } from "vue";
 
-const INITIAL_COLUMNS = ["TO DO", "In Progress", "Done"];
+const INITIAL_COLUMNS = ["TODO", "In progress", "Done"];
 
 export function useColumns() {
   const columns = reactive([]);

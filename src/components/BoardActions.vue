@@ -2,7 +2,7 @@
   <div class="board-actions">
     <BaseButton
       class="board-actions__button"
-      text="Add Column"
+      text="New Column"
       icon="create"
       @click="kanbanBoard.addColumn"
     />
@@ -26,9 +26,7 @@
     <BaseButton
       class="board-actions__button"
       :text="
-        kanbanBoard.isDisabledGlobal
-          ? 'Enable All Editing'
-          : 'Disable All Editing'
+        kanbanBoard.isDisabledGlobal ? 'Enable Editing' : 'Disable Editing'
       "
       :icon="kanbanBoard.isDisabledGlobal ? 'resume' : 'disable'"
       @click="kanbanBoard.toggleEditingGlobal"
