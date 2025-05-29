@@ -1,4 +1,5 @@
 import { watch } from "vue";
+import { debounce } from "../utils/debounce.js";
 
 const STORAGE_KEY = "board-state";
 
@@ -24,11 +25,16 @@ export function useLocalStorage() {
   };
 
   const setupAutoSave = (columns, getState) => {
+    // Debounce save in localStorage
+    const debouncedSave = debounce(() => {
+      const state = getState();
+      saveToLocalStorage(state);
+    }, 500);
+
     watch(
       columns,
       () => {
-        const state = getState();
-        saveToLocalStorage(state);
+        debouncedSave();
       },
       { deep: true }
     );

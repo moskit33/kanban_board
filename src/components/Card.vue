@@ -57,6 +57,7 @@ import {
 } from "vue";
 import BaseButton from "./BaseButton.vue";
 import { useDragAndDrop } from "../composables/useDragAndDrop.js";
+import { debounce } from "../utils/debounce.js";
 
 const props = defineProps({
   card: {
@@ -166,12 +167,19 @@ function restoreOriginalData() {
 function onInput() {
   if (!isEditing.value) return;
 
+  debouncedInput();
+}
+
+// Debounced input handler
+const debouncedInput = debounce(() => {
+  if (!isEditing.value) return;
+
   const currentContent = {
     title: titleInput.value?.textContent?.trim() || "",
     description: descriptionInput.value?.textContent?.trim() || "",
   };
   hasChanges.value = hasContentChanged(currentContent);
-}
+}, 300);
 
 function hasContentChanged(currentContent) {
   // Required title for cards
