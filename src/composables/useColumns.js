@@ -2,7 +2,7 @@ import { ref, reactive, computed } from "vue";
 
 const INITIAL_COLUMNS = ["TODO", "In progress", "Done"];
 
-export function useColumns() {
+export function useColumns(isDisabledGlobal = ref(false)) {
   const columns = reactive([]);
   const nextColumnId = ref(1);
 
@@ -19,7 +19,7 @@ export function useColumns() {
         title,
         cards: [],
         isNew: false,
-        editingDisabled: false,
+        editingDisabled: isDisabledGlobal.value,
         sortBy: "asc",
       });
     });
@@ -28,10 +28,10 @@ export function useColumns() {
   const addColumn = () => {
     columns.push({
       id: nextColumnId.value++,
-      title: "",
+      title: "New Column",
       cards: [],
       isNew: true,
-      editingDisabled: false,
+      editingDisabled: isDisabledGlobal.value,
       sortBy: "asc",
     });
   };

@@ -43,16 +43,11 @@ export function useCards(columns, findColumnById) {
     }
   };
 
-  const sortCards = (columnId) => {
+  const toggleSortBy = (columnId) => {
     const column = findColumnById(columnId);
     if (!column) return;
 
     column.sortBy = column.sortBy === "asc" ? "desc" : "asc";
-    column.cards.sort((a, b) =>
-      column.sortBy === "asc"
-        ? a.title.localeCompare(b.title)
-        : b.title.localeCompare(a.title)
-    );
   };
 
   const clearCards = (columnId) => {
@@ -100,7 +95,7 @@ export function useCards(columns, findColumnById) {
     addCard,
     deleteCard,
     updateCard,
-    sortCards,
+    toggleSortBy,
     clearCards,
     shuffleCards,
     handleCardDrop,

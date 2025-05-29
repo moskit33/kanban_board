@@ -4,6 +4,8 @@ import { useCards } from "./useCards.js";
 import { useLocalStorage } from "./useLocalStorage.js";
 
 export function useKanbanBoard() {
+  const isDisabledGlobal = ref(false);
+
   const {
     columns,
     nextColumnId,
@@ -15,23 +17,20 @@ export function useKanbanBoard() {
     updateColumnTitle,
     shuffleColumns,
     toggleColumnEditing,
-  } = useColumns();
-
+  } = useColumns(isDisabledGlobal);
   const {
     nextCardId,
     totalCards,
     addCard,
     deleteCard,
     updateCard,
-    sortCards,
+    toggleSortBy,
     clearCards,
     shuffleCards,
     handleCardDrop,
   } = useCards(columns, findColumnById);
 
   const { loadFromLocalStorage, setupAutoSave } = useLocalStorage();
-
-  const isDisabledGlobal = ref(false);
 
   const toggleEditingGlobal = () => {
     isDisabledGlobal.value = !isDisabledGlobal.value;
@@ -84,7 +83,7 @@ export function useKanbanBoard() {
     addCard,
     deleteCard,
     updateCard,
-    sortCards,
+    toggleSortBy,
     clearCards,
     shuffleCards,
 
