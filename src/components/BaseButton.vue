@@ -67,13 +67,9 @@ const IconComponent = computed(() => icons[props.icon] || null);
   outline: 2px solid rgba(0, 0, 0, 0.05);
   margin: 0 5px;
 }
-.base-button:focus-visible {
-  outline: 2px solid #007bff;
-  outline-offset: 1px;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
-  z-index: 2;
-}
 
+.base-button:focus,
+.base-button:focus-visible,
 .base-button:hover {
   outline-color: #007bff;
 }
@@ -91,9 +87,5 @@ const IconComponent = computed(() => icons[props.icon] || null);
   width: 16px;
   height: 16px;
   margin-right: 4px;
-}
-
-.button-text {
-  line-height: 1;
 }
 </style>

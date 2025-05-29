@@ -144,7 +144,9 @@ function deleteColumn() {
 }
 
 function dragOver(event) {
-  handleDragOver(event, isDisabled.value);
+  if (isDisabled.value) return;
+
+  handleDragOver(event);
 }
 
 function drop(event) {

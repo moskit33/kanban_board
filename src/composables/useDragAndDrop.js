@@ -1,17 +1,10 @@
 import { ref, inject } from "vue";
 
 export function useDragAndDrop() {
-  const kanbanBoard = inject("kanbanBoard");
-
   const isDragging = ref(false);
   const draggedItem = ref(null);
 
   const startCardDrag = (event, cardId, columnId) => {
-    if (kanbanBoard.isDisabledGlobal.value) {
-      event.preventDefault();
-      return;
-    }
-
     isDragging.value = true;
     draggedItem.value = { cardId, columnId };
 
@@ -47,18 +40,13 @@ export function useDragAndDrop() {
       { once: true }
     );
   };
-  const handleDragOver = (event, isDisabled = false) => {
-    if (kanbanBoard.isDisabledGlobal.value || isDisabled) return;
 
+  const handleDragOver = (event) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
   };
 
   const handleDrop = (event) => {
-    if (kanbanBoard.isDisabledGlobal.value) return null;
-
-    event.preventDefault();
-
     const cardId = parseInt(event.dataTransfer.getData("cardId"), 10);
     const fromColumnId = parseInt(event.dataTransfer.getData("columnId"), 10);
 

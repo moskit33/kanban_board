@@ -1,18 +1,17 @@
 <template>
   <div
     class="card"
-    :class="{ 'card--disable': isDisabled }"
+    :class="{ 'card--disable': isDisabled, 'card--editing': isEditing }"
     @contextmenu.prevent="onDelete"
-    @blur="updateCard"
     @dragstart="dragStart"
-    draggable="true"
+    @dblclick="onEdit"
+    :draggable="!isDisabled"
   >
     <p
       class="card__title"
       :contenteditable="isEditing"
       @keydown.enter.prevent="updateCard"
       @input="onInput"
-      @dblclick="onEdit"
       ref="titleInput"
       data-placeholder="Add Title"
     >
@@ -23,7 +22,6 @@
       :contenteditable="isEditing"
       @keydown.enter.prevent="updateCard"
       @input="onInput"
-      @dblclick="onEdit"
       ref="descriptionInput"
       data-placeholder="Add Description"
     >
@@ -48,7 +46,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, computed, inject } from "vue";
+import {
+  ref,
+  onMounted,
+  nextTick,
+  computed,
+  inject,
+  watch,
+  onUnmounted,
+} from "vue";
 import BaseButton from "./BaseButton.vue";
 import { useDragAndDrop } from "../composables/useDragAndDrop.js";
 
@@ -60,6 +66,10 @@ const props = defineProps({
   columnId: {
     type: Number,
     required: true,
+  },
+  isColumnDisabled: {
+    type: Boolean,
+    default: false,
   },
 });
 
@@ -75,63 +85,77 @@ const originalDescription = ref("");
 const hasChanges = ref(false);
 
 // Computed
-const isDisabled = computed(
-  () =>
-    kanbanBoard.isDisabledGlobal.value ||
-    kanbanBoard.findColumnById(props.columnId)?.editingDisabled
-);
+const isDisabled = computed(() => props.isColumnDisabled);
 
 onMounted(() => {
+  window.addEventListener("beforeunload", cancelEditing);
   if (props.card.isNew && titleInput.value) {
-    isEditing.value = true;
-    nextTick(() => {
-      if (titleInput.value) {
-        titleInput.value.focus();
-        titleInput.value.textContent = "";
-      }
-    });
+    startEditing();
   }
 });
 
-function updateCard() {
-  if (!hasChanges.value) return;
+watch(
+  () => isDisabled.value,
+  (isDisabled) => {
+    // If the column is disabled and currently being edited, reset the state
+    if (isDisabled && isEditing.value) {
+      cancelEditing();
+    }
+  }
+);
 
-  const updatedCard = {
-    id: props.card.id,
-    title: titleInput.value?.textContent?.trim() || "",
-    description: descriptionInput.value?.textContent?.trim() || "",
-  };
-
-  kanbanBoard.updateCard(props.columnId, updatedCard);
-
-  isEditing.value = false;
-  hasChanges.value = false;
-}
-
-function onEdit(event) {
-  if (isDisabled.value || isEditing.value) return;
-
+function startEditing(event) {
   isEditing.value = true;
   originalTitle.value = props.card.title;
   originalDescription.value = props.card.description;
 
   nextTick(() => {
-    if (props.card.isNew) titleInput.value.focus();
-    else {
-      event?.target?.focus();
-    }
+    // Focus the title input if it's a new card or the event target is not focused
+    props.card.isNew ? titleInput.value.focus() : event?.target?.focus();
   });
 }
 
+function resetState() {
+  isEditing.value = false;
+  hasChanges.value = false;
+  originalTitle.value = "";
+  originalDescription.value = "";
+}
+
+function updateCard() {
+  if (!hasChanges.value) return;
+
+  const titleValue = titleInput.value?.textContent?.trim() || "";
+  const descriptionValue = descriptionInput.value?.textContent?.trim() || "";
+  // For new cards title required
+  if (props.card.isNew && !titleValue) return;
+
+  const updatedCard = {
+    id: props.card.id,
+    title: titleValue,
+    description: descriptionValue,
+  };
+
+  kanbanBoard.updateCard(props.columnId, updatedCard);
+
+  resetState();
+}
+
+function onEdit(event) {
+  if (isDisabled.value || isEditing.value) return;
+
+  startEditing(event);
+}
+
 function cancelEditing() {
+  if (!isEditing.value) return;
+
   if (props.card.isNew) {
     return kanbanBoard.deleteCard(props.columnId, props.card.id);
   }
 
   restoreOriginalData();
-
-  isEditing.value = false;
-  hasChanges.value = false;
+  resetState();
 }
 
 function restoreOriginalData() {
@@ -150,6 +174,9 @@ function onInput() {
 }
 
 function hasContentChanged(currentContent) {
+  // Required title for cards
+  if (!currentContent.title) return false;
+
   return (
     currentContent.title !== originalTitle.value ||
     currentContent.description !== originalDescription.value
@@ -157,20 +184,23 @@ function hasContentChanged(currentContent) {
 }
 
 function onDelete() {
+  if (isDisabled.value) return;
+
   kanbanBoard.deleteCard(props.columnId, props.card.id);
 }
 
 function dragStart(event) {
+  if (isDisabled.value) {
+    event.preventDefault();
+    return;
+  }
+
   startCardDrag(event, props.card.id, props.columnId);
 }
 
-function addDraggingClass(event) {
-  event.target.classList.add("dragging");
-}
-
-function removeDraggingClass(event) {
-  event.target.classList.remove("dragging");
-}
+onUnmounted(() => {
+  window.removeEventListener("beforeunload", cancelEditing);
+});
 </script>
 
 <style>
@@ -186,7 +216,7 @@ function removeDraggingClass(event) {
   position: relative;
   min-width: 200px;
 }
-.card--disable {
+.card--disable::after {
   pointer-events: none;
 }
 .card::after {
@@ -213,33 +243,33 @@ function removeDraggingClass(event) {
   cursor: grabbing;
 }
 
-.card__title,
-.card__description {
-  font-weight: 600;
-  min-height: 20px;
-  max-height: 40px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  text-overflow: ellipsis;
-  white-space: normal;
-}
 .card__title {
-  color: rgba(0, 0, 0, 0.9);
+  color: #1a1a1a;
+  font-size: 14px;
+  font-weight: 600;
   margin: 0 0 4px;
 }
 .card__description {
-  color: rgba(0, 0, 0, 0.3);
+  font-size: 14px;
+  font-weight: 500;
+  color: #b3b3b3;
   margin: 0;
 }
 
-.card__title:focus,
-.card__description:focus {
+.card--editing {
   outline: 2px solid #007bff;
+  outline-offset: -2px;
+}
+.card--editing::after {
+  display: none;
+}
+.card--editing > .card__title,
+.card--editing > .card__description {
+  outline: none;
+  background-color: #f0f8ff;
+  padding: 2px 4px;
 }
 
-.card__title:empty:not(:focus):before,
 .card__description:empty:not(:focus):before {
   content: attr(data-placeholder);
   pointer-events: none;
