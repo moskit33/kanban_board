@@ -2,11 +2,11 @@
   <button
     class="base-button"
     :class="{ 'with-icon': icon }"
-    @click="handleClick"
     :disabled="disabled"
   >
     <img v-if="IconComponent" :src="IconComponent" class="button-icon" />
     <span v-if="text" class="button-text">{{ text }}</span>
+    <slot v-else></slot>
   </button>
 </template>
 
@@ -41,10 +41,6 @@ const props = defineProps({
     type: String,
     default: "",
   },
-  callback: {
-    type: Function,
-    default: null,
-  },
   disabled: {
     type: Boolean,
     default: false,
@@ -52,8 +48,6 @@ const props = defineProps({
 });
 
 const IconComponent = computed(() => icons[props.icon] || null);
-
-const handleClick = (event) => props.callback?.(event);
 </script>
 
 <style>
@@ -71,7 +65,7 @@ const handleClick = (event) => props.callback?.(event);
   color: #000;
   border: none;
   outline: 2px solid rgba(0, 0, 0, 0.05);
-  margin-left: 10px;
+  margin: 0 5px;
 }
 .base-button:focus-visible {
   outline: 2px solid #007bff;
