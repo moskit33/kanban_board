@@ -52,7 +52,7 @@
       >
         Sort
         <span class="column-actions__button--sorting">{{
-          column.sortBy === "asc" ? "Ascending" : "Descending"
+          column.sortBy === SORT_BY.ASC ? "Ascending" : "Descending"
         }}</span>
       </BaseButton>
       <BaseButton
@@ -70,6 +70,7 @@ import { ref, computed, inject, watch, nextTick } from "vue";
 import BaseButton from "./BaseButton.vue";
 import Card from "./Card.vue";
 import { useDragAndDrop } from "../composables/useDragAndDrop.js";
+import { SORT_BY } from "../constants";
 
 const props = defineProps({
   column: {
@@ -86,8 +87,8 @@ const titleInput = ref(null);
 const isEditing = ref(false);
 const isDisabled = computed(() => props.column.editingDisabled);
 const sortedCards = computed(() => {
-  return props.column.cards.sort((a, b) => {
-    return props.column.sortBy === "asc"
+  return [...props.column.cards].sort((a, b) => {
+    return props.column.sortBy === SORT_BY.ASC
       ? a.title.localeCompare(b.title)
       : b.title.localeCompare(a.title);
   });

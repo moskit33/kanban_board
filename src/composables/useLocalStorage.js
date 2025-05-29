@@ -1,7 +1,6 @@
 import { watch } from "vue";
 import { debounce } from "../utils/debounce.js";
-
-const STORAGE_KEY = "board-state";
+import { STORAGE_KEY } from "../constants";
 
 export function useLocalStorage() {
   const saveToLocalStorage = (state) => {

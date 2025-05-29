@@ -1,6 +1,5 @@
 import { ref, reactive, computed } from "vue";
-
-const INITIAL_COLUMNS = ["TODO", "In progress", "Done"];
+import { DEFAULT_COLUMNS, SORT_BY } from "../constants";
 
 export function useColumns(isDisabledGlobal = ref(false)) {
   const columns = reactive([]);
@@ -13,14 +12,14 @@ export function useColumns(isDisabledGlobal = ref(false)) {
   };
 
   const createDefaultColumns = () => {
-    INITIAL_COLUMNS.forEach((title) => {
+    DEFAULT_COLUMNS.forEach((title) => {
       columns.push({
         id: nextColumnId.value++,
         title,
         cards: [],
         isNew: false,
         editingDisabled: isDisabledGlobal.value,
-        sortBy: "asc",
+        sortBy: SORT_BY.ASC,
       });
     });
   };
@@ -32,7 +31,7 @@ export function useColumns(isDisabledGlobal = ref(false)) {
       cards: [],
       isNew: true,
       editingDisabled: isDisabledGlobal.value,
-      sortBy: "asc",
+      sortBy: SORT_BY.ASC,
     });
   };
 

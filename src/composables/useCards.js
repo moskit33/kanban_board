@@ -1,4 +1,5 @@
 import { ref, computed } from "vue";
+import { SORT_BY } from "../constants";
 
 export function useCards(columns, findColumnById) {
   const nextCardId = ref(1);
@@ -47,7 +48,7 @@ export function useCards(columns, findColumnById) {
     const column = findColumnById(columnId);
     if (!column) return;
 
-    column.sortBy = column.sortBy === "asc" ? "desc" : "asc";
+    column.sortBy = column.sortBy === SORT_BY.ASC ? SORT_BY.DESC : SORT_BY.ASC;
   };
 
   const clearCards = (columnId) => {
