@@ -4,7 +4,12 @@
     :class="{ 'with-icon': icon }"
     :disabled="disabled"
   >
-    <img v-if="IconComponent" :src="IconComponent" class="button-icon" />
+    <img
+      v-if="IconComponent"
+      :src="IconComponent"
+      :alt="icon"
+      class="button-icon"
+    />
     <span v-if="text" class="button-text">{{ text }}</span>
     <slot v-else></slot>
   </button>
