@@ -26,9 +26,11 @@
     <BaseButton
       class="board-actions__button"
       :text="
-        kanbanBoard.isDisabledGlobal ? 'Enable Editing' : 'Disable Editing'
+        kanbanBoard.isDisabledGlobal.value
+          ? 'Enable Editing'
+          : 'Disable Editing'
       "
-      :icon="kanbanBoard.isDisabledGlobal ? 'resume' : 'disable'"
+      :icon="kanbanBoard.isDisabledGlobal.value ? 'resume' : 'disable'"
       @click="kanbanBoard.toggleEditingGlobal"
     />
   </div>

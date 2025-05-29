@@ -42,29 +42,4 @@ onMounted(() => {
   padding: 16px 12px;
   height: 100vh;
 }
-.board-actions {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  margin-top: 16px;
-}
-
-.board-actions__button {
-  margin: 0 2px;
-}
-
-.board-actions__title {
-  font-size: 14px;
-  font-weight: 600;
-  background: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 1) 0%,
-    rgba(0, 0, 0, 0.4) 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: transparent;
-  margin: 10px 0;
-}
 </style>
