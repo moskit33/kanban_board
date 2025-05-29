@@ -96,26 +96,23 @@ const sortedCards = computed(() => {
 
 const column = props.column;
 
-watch(
-  () => isDisabled.value,
-  (isDisabled) => {
-    if (isDisabled && isEditing.value) {
-      titleInput.value.textContent = column.title;
-      isEditing.value = false;
-    }
+watch(isDisabled, (isDisabled) => {
+  if (isDisabled && isEditing.value) {
+    titleInput.value.textContent = column.title;
+    isEditing.value = false;
   }
-);
+});
 
-function startEditing() {
+const startEditing = () => {
   if (isDisabled.value) return;
 
   isEditing.value = true;
   nextTick(() => {
     titleInput.value.focus();
   });
-}
+};
 
-function updateColumnTitle() {
+const updateColumnTitle = () => {
   if (!titleInput.value) return;
 
   const newTitle = titleInput.value.textContent.trim();
@@ -126,31 +123,31 @@ function updateColumnTitle() {
     titleInput.value.textContent = column.title;
   }
   isEditing.value = false;
-}
+};
 
-function toggleEditingDisabled() {
+const toggleEditingDisabled = () => {
   kanbanBoard.toggleColumnEditing(column.id);
-}
+};
 
-function addCard() {
+const addCard = () => {
   if (isDisabled.value) return;
 
   kanbanBoard.addCard(column.id);
-}
+};
 
-function deleteColumn() {
+const deleteColumn = () => {
   if (isDisabled.value) return;
 
   kanbanBoard.deleteColumn(column.id);
-}
+};
 
-function dragOver(event) {
+const dragOver = (event) => {
   if (isDisabled.value) return;
 
   handleDragOver(event);
-}
+};
 
-function drop(event) {
+const drop = (event) => {
   if (isDisabled.value) return;
 
   const dropData = handleDrop(event);
@@ -160,7 +157,7 @@ function drop(event) {
       toColumnId: column.id,
     });
   }
-}
+};
 </script>
 
 <style>

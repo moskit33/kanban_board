@@ -95,17 +95,14 @@ onMounted(() => {
   }
 });
 
-watch(
-  () => isDisabled.value,
-  (isDisabled) => {
-    // If the column is disabled and currently being edited, reset the state
-    if (isDisabled && isEditing.value) {
-      cancelEditing();
-    }
+watch(isDisabled, (isDisabled) => {
+  // If the column is disabled and currently being edited, reset the state
+  if (isDisabled && isEditing.value) {
+    cancelEditing();
   }
-);
+});
 
-function startEditing(event) {
+const startEditing = (event) => {
   isEditing.value = true;
   originalTitle.value = props.card.title;
   originalDescription.value = props.card.description;
@@ -114,16 +111,16 @@ function startEditing(event) {
     // Focus the title input if it's a new card or the event target is not focused
     props.card.isNew ? titleInput.value.focus() : event?.target?.focus();
   });
-}
+};
 
-function resetState() {
+const resetState = () => {
   isEditing.value = false;
   hasChanges.value = false;
   originalTitle.value = "";
   originalDescription.value = "";
-}
+};
 
-function updateCard() {
+const updateCard = () => {
   if (!hasChanges.value) return;
 
   const titleValue = titleInput.value?.textContent?.trim() || "";
@@ -138,37 +135,34 @@ function updateCard() {
   };
 
   kanbanBoard.updateCard(props.columnId, updatedCard);
-
   resetState();
-}
+};
 
-function onEdit(event) {
+const onEdit = (event) => {
   if (isDisabled.value || isEditing.value) return;
 
   startEditing(event);
-}
+};
 
-function cancelEditing() {
+const cancelEditing = () => {
   if (!isEditing.value) return;
 
   if (props.card.isNew) {
     return kanbanBoard.deleteCard(props.columnId, props.card.id);
   }
-
   restoreOriginalData();
   resetState();
-}
+};
 
-function restoreOriginalData() {
+const restoreOriginalData = () => {
   titleInput.value.textContent = props.card.title;
   descriptionInput.value.textContent = props.card.description;
-}
+};
 
-function onInput() {
+const onInput = () => {
   if (!isEditing.value) return;
-
   debouncedInput();
-}
+};
 
 // Debounced input handler
 const debouncedInput = debounce(() => {
@@ -181,7 +175,7 @@ const debouncedInput = debounce(() => {
   hasChanges.value = hasContentChanged(currentContent);
 }, 300);
 
-function hasContentChanged(currentContent) {
+const hasContentChanged = (currentContent) => {
   // Required title for cards
   if (!currentContent.title) return false;
 
@@ -189,22 +183,22 @@ function hasContentChanged(currentContent) {
     currentContent.title !== originalTitle.value ||
     currentContent.description !== originalDescription.value
   );
-}
+};
 
-function onDelete() {
+const onDelete = () => {
   if (isDisabled.value) return;
 
   kanbanBoard.deleteCard(props.columnId, props.card.id);
-}
+};
 
-function dragStart(event) {
+const dragStart = (event) => {
   if (isDisabled.value) {
     event.preventDefault();
     return;
   }
 
   startCardDrag(event, props.card.id, props.columnId);
-}
+};
 
 onUnmounted(() => {
   window.removeEventListener("beforeunload", cancelEditing);
