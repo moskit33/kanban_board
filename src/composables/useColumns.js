@@ -17,7 +17,6 @@ export function useColumns(isDisabledGlobal = ref(false)) {
         id: nextColumnId.value++,
         title,
         cards: [],
-        isNew: false,
         editingDisabled: isDisabledGlobal.value,
         sortBy: SORT_BY.ASC,
       });
@@ -45,7 +44,6 @@ export function useColumns(isDisabledGlobal = ref(false)) {
     const column = findColumnById(columnId);
     if (column) {
       column.title = newTitle;
-      column.isNew = false;
     }
   };
 

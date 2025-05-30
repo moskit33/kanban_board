@@ -7,6 +7,7 @@
         :class="{ 'column-header__title--editing': isEditing }"
         @click="startEditing"
         @keydown.enter.prevent="updateColumnTitle"
+        @blur="cancelEditing"
         :contenteditable="isEditing"
         ref="titleInput"
       >
@@ -87,21 +88,35 @@ const titleInput = ref(null);
 const isEditing = ref(false);
 const isDisabled = computed(() => props.column.editingDisabled);
 const sortedCards = computed(() => {
-  return [...props.column.cards].sort((a, b) => {
+  const originalCards = [...props.column.cards];
+
+  const newCardIndex = originalCards.findIndex((card) => card.isNew);
+  const newCard =
+    newCardIndex !== -1 ? originalCards.splice(newCardIndex, 1)[0] : null;
+
+  const sortedExistingCards = originalCards.sort((a, b) => {
     return props.column.sortBy === SORT_BY.ASC
       ? a.title.localeCompare(b.title)
       : b.title.localeCompare(a.title);
   });
+
+  return newCard ? [...sortedExistingCards, newCard] : sortedExistingCards;
 });
 
 const column = props.column;
 
 watch(isDisabled, (isDisabled) => {
   if (isDisabled && isEditing.value) {
-    titleInput.value.textContent = column.title;
-    isEditing.value = false;
+    cancelEditing();
   }
 });
+
+const cancelEditing = () => {
+  if (!isEditing.value) return;
+
+  titleInput.value.textContent = column.title;
+  isEditing.value = false;
+};
 
 const startEditing = () => {
   if (isDisabled.value) return;
