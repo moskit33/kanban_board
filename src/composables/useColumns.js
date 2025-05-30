@@ -29,7 +29,6 @@ export function useColumns(isDisabledGlobal = ref(false)) {
       id: nextColumnId.value++,
       title: "New Column",
       cards: [],
-      isNew: true,
       editingDisabled: isDisabledGlobal.value,
       sortBy: SORT_BY.ASC,
     });

@@ -32,7 +32,7 @@ export function useKanbanBoard() {
 
   const { loadFromLocalStorage, setupAutoSave } = useLocalStorage();
 
-  const toggleEditingGlobal = () => {
+  const toggleDisableGlobal = () => {
     isDisabledGlobal.value = !isDisabledGlobal.value;
     columns.forEach((column) => {
       column.editingDisabled = isDisabledGlobal.value;
@@ -91,7 +91,7 @@ export function useKanbanBoard() {
     handleCardDrop,
 
     // Toggle disabled state
-    toggleEditingGlobal,
+    toggleDisableGlobal,
 
     // Utils
     findColumnById,

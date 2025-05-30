@@ -31,7 +31,7 @@
           : 'Disable Editing'
       "
       :icon="kanbanBoard.isDisabledGlobal.value ? 'resume' : 'disable'"
-      @click="kanbanBoard.toggleEditingGlobal"
+      @click="kanbanBoard.toggleDisableGlobal"
     />
   </div>
   <h4 class="board-actions__title">Board Actions</h4>
