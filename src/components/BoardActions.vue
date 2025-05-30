@@ -4,7 +4,7 @@
       class="board-actions__button"
       text="New Column"
       icon="create"
-      @click="kanbanBoard.addColumn"
+      @click="handleAddColumn"
     />
 
     <BaseButton
@@ -12,7 +12,7 @@
       text="Shuffle Columns"
       icon="shuffle"
       :disabled="!kanbanBoard.hasColumns"
-      @click="kanbanBoard.shuffleColumns"
+      @click="handleShuffleColumns"
     />
 
     <BaseButton
@@ -20,7 +20,7 @@
       text="Shuffle Cards"
       icon="shuffle"
       :disabled="kanbanBoard.totalCards === 0"
-      @click="kanbanBoard.shuffleCards"
+      @click="handleShuffleCards"
     />
 
     <BaseButton
@@ -31,7 +31,7 @@
           : 'Disable Editing'
       "
       :icon="kanbanBoard.isDisabledGlobal.value ? 'resume' : 'disable'"
-      @click="kanbanBoard.toggleDisableGlobal"
+      @click="handleToggleDisableGlobal"
     />
   </div>
   <h4 class="board-actions__title">Board Actions</h4>
@@ -42,6 +42,26 @@ import { inject } from "vue";
 import BaseButton from "./BaseButton.vue";
 
 const kanbanBoard = inject("kanbanBoard");
+
+// handler that cancels active editing before action
+const withEditingCancel = (action) => {
+  return () => {
+    if (kanbanBoard.hasActiveEditing.value) {
+      kanbanBoard.cancelCurrentEditing();
+    }
+    action();
+  };
+};
+
+// Handler methods
+const handleAddColumn = withEditingCancel(() => kanbanBoard.addColumn());
+const handleShuffleColumns = withEditingCancel(() =>
+  kanbanBoard.shuffleColumns()
+);
+const handleShuffleCards = withEditingCancel(() => kanbanBoard.shuffleCards());
+const handleToggleDisableGlobal = withEditingCancel(() =>
+  kanbanBoard.toggleDisableGlobal()
+);
 </script>
 
 <style scoped>

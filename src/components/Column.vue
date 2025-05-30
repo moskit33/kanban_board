@@ -41,7 +41,7 @@
       class="new-card-button"
       text="New Card"
       icon="create"
-      :disabled="isDisabled"
+      :disabled="isNewCardDisabled"
       @click="addCard"
     />
     <div class="column-actions">
@@ -49,7 +49,7 @@
         class="column-actions__button"
         icon="sort"
         :disabled="isDisabled"
-        @click="kanbanBoard.toggleSortBy(column.id)"
+        @click="handleToggleSortBy"
       >
         Sort
         <span class="column-actions__button--sorting">{{
@@ -60,7 +60,7 @@
         text="Clear All"
         icon="clear"
         :disabled="isDisabled"
-        @click="kanbanBoard.clearCards(column.id)"
+        @click="handleClearCards"
       />
     </div>
   </div>
@@ -87,6 +87,9 @@ const { handleDragOver, handleDrop } = useDragAndDrop();
 const titleInput = ref(null);
 const isEditing = ref(false);
 const isDisabled = computed(() => props.column.editingDisabled);
+const isNewCardDisabled = computed(() => {
+  return isDisabled.value || kanbanBoard.hasActiveEditing.value;
+});
 const sortedCards = computed(() => {
   const originalCards = [...props.column.cards];
 
@@ -141,19 +144,48 @@ const updateColumnTitle = () => {
 };
 
 const toggleEditingDisabled = () => {
+  // Cancel any active editing before toggling
+  if (kanbanBoard.hasActiveEditing.value) {
+    kanbanBoard.cancelCurrentEditing();
+  }
+
   kanbanBoard.toggleColumnEditing(column.id);
 };
 
 const addCard = () => {
-  if (isDisabled.value) return;
+  if (isNewCardDisabled.value) return;
 
   kanbanBoard.addCard(column.id);
 };
 
 const deleteColumn = () => {
   if (isDisabled.value) return;
+  // Check if active editing before column delete
+  if (kanbanBoard.hasActiveEditing.value) {
+    kanbanBoard.cancelCurrentEditing();
+  }
 
   kanbanBoard.deleteColumn(column.id);
+};
+
+const handleClearCards = () => {
+  if (isDisabled.value) return;
+  // Cancel any active editing before clearing cards
+  if (kanbanBoard.hasActiveEditing.value) {
+    kanbanBoard.cancelCurrentEditing();
+  }
+
+  kanbanBoard.clearCards(column.id);
+};
+
+const handleToggleSortBy = () => {
+  if (isDisabled.value) return;
+  // Cancel any active editing before sorting
+  if (kanbanBoard.hasActiveEditing.value) {
+    kanbanBoard.cancelCurrentEditing();
+  }
+
+  kanbanBoard.toggleSortBy(column.id);
 };
 
 const dragOver = (event) => {
@@ -164,6 +196,10 @@ const dragOver = (event) => {
 
 const drop = (event) => {
   if (isDisabled.value) return;
+  // Cancel any active editing before handling drop
+  if (kanbanBoard.hasActiveEditing.value) {
+    kanbanBoard.cancelCurrentEditing();
+  }
 
   const dropData = handleDrop(event);
   if (dropData) {
@@ -215,19 +251,26 @@ const drop = (event) => {
   min-width: 40px;
   max-width: 125px;
   text-align: left;
-  min-height: 20px;
-  max-height: 60px;
-  overflow: hidden;
-  line-clamp: 3;
-  -webkit-line-clamp: 3;
+  display: -webkit-box;
   -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
   text-overflow: ellipsis;
-  white-space: normal;
+  line-height: 1.5;
+  max-height: 3em;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 .column-header__title--editing {
   outline: 2px solid #007bff;
   background: #fff;
   padding: 0 2px;
+  display: block;
+  -webkit-line-clamp: none;
+  line-clamp: none;
+  max-height: none;
+  overflow: visible;
 }
 .column-header__count {
   font-size: 13px;

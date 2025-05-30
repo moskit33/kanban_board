@@ -1,10 +1,11 @@
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useColumns } from "./useColumns.js";
 import { useCards } from "./useCards.js";
 import { useLocalStorage } from "./useLocalStorage.js";
 
 export function useKanbanBoard() {
   const isDisabledGlobal = ref(false);
+  const currentEditingCard = ref(null); // { cardId, columnId, isNew }
 
   const {
     columns,
@@ -28,9 +29,39 @@ export function useKanbanBoard() {
     clearCards,
     shuffleCards,
     handleCardDrop,
-  } = useCards(columns, findColumnById);
-
+  } = useCards(columns, findColumnById, currentEditingCard);
   const { loadFromLocalStorage, setupAutoSave } = useLocalStorage();
+
+  // Computed properties
+  const hasActiveEditing = computed(() => currentEditingCard.value !== null);
+
+  // Methods for managing card editing state
+  const setCurrentEditingCard = (cardId, columnId, isNew) => {
+    currentEditingCard.value = { cardId, columnId, isNew };
+  };
+
+  const clearCurrentEditingCard = () => {
+    currentEditingCard.value = null;
+  };
+
+  const isCardCurrentlyEditing = (cardId, columnId) => {
+    return (
+      currentEditingCard.value?.cardId === cardId &&
+      currentEditingCard.value?.columnId === columnId
+    );
+  };
+
+  const cancelCurrentEditing = () => {
+    if (!currentEditingCard.value) return;
+
+    const { cardId, columnId, isNew } = currentEditingCard.value;
+
+    if (cardId && isNew) {
+      // If the card is new and not saved, delete it
+      deleteCard(columnId, cardId);
+    }
+    clearCurrentEditingCard();
+  };
 
   const toggleDisableGlobal = () => {
     isDisabledGlobal.value = !isDisabledGlobal.value;
@@ -60,17 +91,18 @@ export function useKanbanBoard() {
 
     setupAutoSave(columns, getStateForStorage);
   };
-
   return {
     // State
     columns,
     nextColumnId,
     nextCardId,
     isDisabledGlobal,
+    currentEditingCard,
 
     // Computed
     totalCards,
     hasColumns,
+    hasActiveEditing,
 
     // Column methods
     addColumn,
@@ -92,6 +124,12 @@ export function useKanbanBoard() {
 
     // Toggle disabled state
     toggleDisableGlobal,
+
+    // Editing state management
+    setCurrentEditingCard,
+    clearCurrentEditingCard,
+    isCardCurrentlyEditing,
+    cancelCurrentEditing,
 
     // Utils
     findColumnById,

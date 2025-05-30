@@ -5,7 +5,7 @@
     @contextmenu.prevent="onDelete"
     @dragstart="dragStart"
     @dblclick="onEdit"
-    :draggable="!isDisabled"
+    :draggable="!isDisabled && !isEditing"
   >
     <p
       class="card__title"
@@ -87,22 +87,44 @@ const hasChanges = ref(false);
 
 // Computed
 const isDisabled = computed(() => props.isColumnDisabled);
+const isCurrentlyEditing = computed(() =>
+  kanbanBoard.isCardCurrentlyEditing(props.card.id, props.columnId)
+);
 
 onMounted(() => {
-  window.addEventListener("beforeunload", cancelEditing);
   if (props.card.isNew && titleInput.value) {
     startEditing();
   }
 });
 
+// If the another card was start edited to cancel editing in this card
+watch(isCurrentlyEditing, (isCurrentlyEditing) => {
+  if (!isCurrentlyEditing && isEditing.value) {
+    cancelEditing();
+  }
+});
+
+// If the column is disabled and currently being edited, reset the state
 watch(isDisabled, (isDisabled) => {
-  // If the column is disabled and currently being edited, reset the state
   if (isDisabled && isEditing.value) {
     cancelEditing();
   }
 });
 
 const startEditing = (event) => {
+  // Cancel current editing if another card is being edited
+
+  if (kanbanBoard.hasActiveEditing.value && !isCurrentlyEditing.value) {
+    kanbanBoard.cancelCurrentEditing();
+  }
+
+  // Set this card current editing
+  kanbanBoard.setCurrentEditingCard(
+    props.card.id,
+    props.columnId,
+    props.card.isNew
+  );
+
   isEditing.value = true;
   originalTitle.value = props.card.title;
   originalDescription.value = props.card.description;
@@ -118,6 +140,11 @@ const resetState = () => {
   hasChanges.value = false;
   originalTitle.value = "";
   originalDescription.value = "";
+
+  // Clear editing state in kanban board
+  if (isCurrentlyEditing.value) {
+    kanbanBoard.clearCurrentEditingCard();
+  }
 };
 
 const updateCard = () => {
@@ -148,10 +175,13 @@ const cancelEditing = () => {
   if (!isEditing.value) return;
 
   if (props.card.isNew) {
-    return kanbanBoard.deleteCard(props.columnId, props.card.id);
+    // If new card, delete it
+    kanbanBoard.deleteCard(props.columnId, props.card.id);
+  } else {
+    // Reset the card data to original values
+    restoreOriginalData();
+    resetState();
   }
-  restoreOriginalData();
-  resetState();
 };
 
 const restoreOriginalData = () => {
@@ -192,16 +222,32 @@ const onDelete = () => {
 };
 
 const dragStart = (event) => {
-  if (isDisabled.value) {
+  if (isDisabled.value || isEditing.value) {
     event.preventDefault();
     return;
+  }
+  // Cancel any other active editing before starting drag
+  if (kanbanBoard.hasActiveEditing.value && !isCurrentlyEditing.value) {
+    kanbanBoard.cancelCurrentEditing();
   }
 
   startCardDrag(event, props.card.id, props.columnId);
 };
 
+// Handle Escape key to cancel editing
+const handleKeydown = (event) => {
+  if (event.key === "Escape" && isEditing.value) {
+    event.preventDefault();
+    cancelEditing();
+  }
+};
+
+onMounted(() => {
+  document.addEventListener("keydown", handleKeydown);
+});
+
 onUnmounted(() => {
-  window.removeEventListener("beforeunload", cancelEditing);
+  document.removeEventListener("keydown", handleKeydown);
 });
 </script>
 
@@ -245,14 +291,27 @@ onUnmounted(() => {
   cursor: grabbing;
 }
 
+.card__title,
+.card__description {
+  font-size: 14px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  max-height: 2.8em;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
 .card__title {
   color: #1a1a1a;
-  font-size: 14px;
   font-weight: 600;
   margin: 0 0 4px;
 }
 .card__description {
-  font-size: 14px;
   font-weight: 500;
   color: #b3b3b3;
   margin: 0;
@@ -270,6 +329,11 @@ onUnmounted(() => {
   outline: none;
   background-color: #f0f8ff;
   padding: 2px 4px;
+  display: block;
+  -webkit-line-clamp: none;
+  line-clamp: none;
+  max-height: none;
+  overflow: visible;
 }
 
 .card__description:empty:not(:focus):before {

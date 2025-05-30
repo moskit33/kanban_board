@@ -1,25 +1,30 @@
 import { ref, computed } from "vue";
 import { SORT_BY } from "../constants";
 
-export function useCards(columns, findColumnById) {
+export function useCards(columns, findColumnById, currentEditingCard) {
   const nextCardId = ref(1);
 
   const totalCards = computed(() =>
     columns.reduce((total, column) => total + column.cards.length, 0)
   );
-
   const addCard = (columnId) => {
+    // Check if there's currently an editing card
+    if (currentEditingCard.value) return;
+
     const column = findColumnById(columnId);
     if (!column) return;
 
+    const newCardId = nextCardId.value++;
     column.cards.push({
-      id: nextCardId.value++,
+      id: newCardId,
       title: "",
       description: "",
       isNew: true,
     });
-  };
 
+    // Set the current editing for new card
+    currentEditingCard.value = { cardId: newCardId, columnId };
+  };
   const deleteCard = (columnId, cardId) => {
     const column = findColumnById(columnId);
     if (!column) return;
@@ -27,9 +32,16 @@ export function useCards(columns, findColumnById) {
     const cardIndex = column.cards.findIndex((card) => card.id === cardId);
     if (cardIndex !== -1) {
       column.cards.splice(cardIndex, 1);
+
+      // Clear editing state if this card was being edited
+      if (
+        currentEditingCard.value?.cardId === cardId &&
+        currentEditingCard.value?.columnId === columnId
+      ) {
+        currentEditingCard.value = null;
+      }
     }
   };
-
   const updateCard = (columnId, cardData) => {
     const column = findColumnById(columnId);
     if (!column) return;
@@ -41,6 +53,14 @@ export function useCards(columns, findColumnById) {
         description: cardData.description,
         isNew: false,
       });
+
+      // Clear editing state after successful update
+      if (
+        currentEditingCard.value?.cardId === cardData.id &&
+        currentEditingCard.value?.columnId === columnId
+      ) {
+        currentEditingCard.value = null;
+      }
     }
   };
 
